@@ -9,4 +9,4 @@ RUN mvn clean package -DskipTests
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "target/eazystore-0.0.1-SNAPSHOT.jar"]
+CMD  ["java", "-Xmx300m", "-Xms128m", "-XX:MaxMetaspaceSize=128m", "-jar", "target/eazystore-0.0.1-SNAPSHOT.jar"]
