@@ -4,14 +4,15 @@ import com.eazybytes.eazystore.constants.ApplicationConstants;
 import com.eazybytes.eazystore.dto.ContactResponseDto;
 import com.eazybytes.eazystore.dto.OrderResponseDto;
 import com.eazybytes.eazystore.dto.ResponseDto;
-import com.eazybytes.eazystore.entity.Order;
 import com.eazybytes.eazystore.service.IContactService;
 import com.eazybytes.eazystore.service.IOrderService;
+import com.eazybytes.eazystore.service.PriceOfferService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -20,6 +21,7 @@ public class AdminController {
 
     private final IOrderService iOrderService;
     private final IContactService iContactService;
+    private final PriceOfferService priceOfferService;
 
     @GetMapping("/orders")
     public ResponseEntity<List<OrderResponseDto>> getAllPendingOrders() {
@@ -28,17 +30,31 @@ public class AdminController {
 
     @PatchMapping("/orders/{orderId}/confirm")
     public ResponseEntity<ResponseDto> confirmOrder(@PathVariable Long orderId) {
-        iOrderService.updateOrderStatus(orderId, ApplicationConstants.ORDER_STATUS_CONFIRMED);
+        iOrderService.updateOrderStatus(
+                orderId,
+                ApplicationConstants.ORDER_STATUS_CONFIRMED
+        );
+
         return ResponseEntity.ok(
-                new ResponseDto("200", "Order #" + orderId + " has been approved.")
+                new ResponseDto(
+                        "200",
+                        "Order #" + orderId + " has been approved."
+                )
         );
     }
 
     @PatchMapping("/orders/{orderId}/cancel")
     public ResponseEntity<ResponseDto> cancelOrder(@PathVariable Long orderId) {
-        iOrderService.updateOrderStatus(orderId, ApplicationConstants.ORDER_STATUS_CANCELLED);
+        iOrderService.updateOrderStatus(
+                orderId,
+                ApplicationConstants.ORDER_STATUS_CANCELLED
+        );
+
         return ResponseEntity.ok(
-                new ResponseDto("200", "Order #" + orderId + " has been cancelled.")
+                new ResponseDto(
+                        "200",
+                        "Order #" + orderId + " has been cancelled."
+                )
         );
     }
 
@@ -49,10 +65,47 @@ public class AdminController {
 
     @PatchMapping("/messages/{contactId}/close")
     public ResponseEntity<ResponseDto> closeMessage(@PathVariable Long contactId) {
-        iContactService.updateMessageStatus(contactId, ApplicationConstants.CLOSED_MESSAGE);
+        iContactService.updateMessageStatus(
+                contactId,
+                ApplicationConstants.CLOSED_MESSAGE
+        );
+
         return ResponseEntity.ok(
-                new ResponseDto("200", "Contact #" + contactId + " has been closed.")
+                new ResponseDto(
+                        "200",
+                        "Contact #" + contactId + " has been closed."
+                )
         );
     }
 
+    @PostMapping("/price-offer")
+    public ResponseEntity<?> setPriceOffer(@RequestParam String offer) {
+
+        if (!offer.equals("FESTIVE") &&
+            !offer.equals("WEEKEND") &&
+            !offer.equals("NONE")) {
+
+            return ResponseEntity.badRequest().body("Invalid offer");
+        }
+
+        priceOfferService.setOffer(offer);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "offer", offer,
+                        "discount", priceOfferService.getDiscountPercentage()
+                )
+        );
+    }
+
+    @GetMapping("/price-offer")
+    public ResponseEntity<?> getPriceOffer() {
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "offer", priceOfferService.getCurrentOffer(),
+                        "discount", priceOfferService.getDiscountPercentage()
+                )
+        );
+    }
 }
