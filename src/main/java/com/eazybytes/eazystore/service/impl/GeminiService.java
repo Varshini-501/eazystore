@@ -23,7 +23,7 @@ public class GeminiService {
     @Value("${GEMINI_API_KEY:}")
     private String apiKey;
 
-    @Value("${GEMINI_MODEL:gemini-2.0-flash-lite}")
+    @Value("${GEMINI_MODEL:gemini-3.5-flash-lite}")
     private String model;
 
     public GeminiService() {
