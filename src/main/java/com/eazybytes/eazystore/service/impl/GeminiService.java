@@ -61,9 +61,10 @@ public class GeminiService {
                     .retrieve()
                     .body(Map.class);
             return extractText(response);
-        } catch (RestClientException ex) {
-            throw new IllegalStateException("Couldn't reach the AI service right now. Please try again in a moment.", ex);
-        }
+        } } catch (RestClientException ex) {
+    throw new IllegalStateException(
+        "Gemini API error: " + ex.getMessage(), ex);
+}
     }
 
     @SuppressWarnings("unchecked")
