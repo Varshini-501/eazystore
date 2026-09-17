@@ -49,8 +49,17 @@ public class GeminiService {
                 """.formatted(productName, productDescription, price);
 
         Map<String, Object> requestBody = Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-                "generationConfig", Map.of("temperature", 0.9, "maxOutputTokens", 200)
+                "contents", List.of(
+                        Map.of(
+                                "parts", List.of(
+                                        Map.of("text", prompt)
+                                )
+                        )
+                ),
+                "generationConfig", Map.of(
+                        "temperature", 0.9,
+                        "maxOutputTokens", 200
+                )
         );
 
         try {
@@ -60,23 +69,34 @@ public class GeminiService {
                     .body(requestBody)
                     .retrieve()
                     .body(Map.class);
+
             return extractText(response);
-        } } catch (RestClientException ex) {
-    throw new IllegalStateException(
-        "Gemini API error: " + ex.getMessage(), ex);
-}
+
+        } catch (RestClientException ex) {
+            throw new IllegalStateException(
+                    "Gemini API error: " + ex.getMessage(), ex);
+        }
     }
 
     @SuppressWarnings("unchecked")
     private String extractText(Map<?, ?> response) {
         try {
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-            Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
-            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+            List<Map<String, Object>> candidates =
+                    (List<Map<String, Object>>) response.get("candidates");
+
+            Map<String, Object> content =
+                    (Map<String, Object>) candidates.get(0).get("content");
+
+            List<Map<String, Object>> parts =
+                    (List<Map<String, Object>>) content.get("parts");
+
             String text = (String) parts.get(0).get("text");
+
             return text == null ? "" : text.trim();
+
         } catch (Exception ex) {
-            throw new IllegalStateException("The AI service returned an unexpected response. Please try again.");
+            throw new IllegalStateException(
+                    "The AI service returned an unexpected response. Please try again.");
         }
     }
 }
