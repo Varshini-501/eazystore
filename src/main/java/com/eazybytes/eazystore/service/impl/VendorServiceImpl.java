@@ -1,6 +1,7 @@
 package com.eazybytes.eazystore.service.impl;
 
 import com.eazybytes.eazystore.dto.BulkUploadResultDto;
+import com.eazybytes.eazystore.dto.ProductDto;
 import com.eazybytes.eazystore.dto.VendorProfileDto;
 import com.eazybytes.eazystore.dto.VendorProfileUpdateDto;
 import com.eazybytes.eazystore.dto.VendorRegisterRequestDto;
@@ -26,6 +27,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -55,6 +57,7 @@ public class VendorServiceImpl implements IVendorService {
     private final PostRepository postRepository;
     private final ProductRepository productRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final GeminiService geminiService;
 
     @Override
     public void registerVendor(VendorRegisterRequestDto vendorRegisterRequestDto) {
@@ -152,6 +155,35 @@ public class VendorServiceImpl implements IVendorService {
         }
 
         return new BulkUploadResultDto(rows.size(), successCount, rows.size() - successCount, errors);
+    }
+
+    @Override
+    public List<ProductDto> getMyProducts() {
+        VendorProfile vendorProfile = getAuthenticatedVendorProfile();
+        return productRepository.findByVendor_VendorIdOrderByCreatedAtDesc(vendorProfile.getVendorId())
+                .stream().map(this::transformProductToDto).toList();
+    }
+
+    @Override
+    public String generatePromoText(Long productId) {
+        VendorProfile vendorProfile = getAuthenticatedVendorProfile();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", String.valueOf(productId)));
+        if (product.getVendor() == null || !product.getVendor().getVendorId().equals(vendorProfile.getVendorId())) {
+            throw new IllegalArgumentException("You can only generate promo text for your own products");
+        }
+        return geminiService.generatePromoText(product.getName(), product.getDescription(), product.getPrice());
+    }
+
+    private ProductDto transformProductToDto(Product product) {
+        ProductDto productDto = new ProductDto();
+        BeanUtils.copyProperties(product, productDto);
+        productDto.setProductId(product.getId());
+        if (product.getVendor() != null) {
+            productDto.setVendorId(product.getVendor().getVendorId());
+            productDto.setVendorStoreName(product.getVendor().getStoreName());
+        }
+        return productDto;
     }
 
     private String validateRow(ParsedProductRow row) {
