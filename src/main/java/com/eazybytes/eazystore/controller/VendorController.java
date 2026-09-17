@@ -14,7 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import com.eazybytes.eazystore.dto.ProductDto;
+import java.util.List;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,6 +84,20 @@ public class VendorController {
         } catch (IOException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Could not read the uploaded file. Please check the format and try again."));
+        }
+    }
+        @GetMapping("/products")
+    public ResponseEntity<List<ProductDto>> getMyProducts() {
+        return ResponseEntity.ok(iVendorService.getMyProducts());
+    }
+
+    @PostMapping("/products/{productId}/generate-promo")
+    public ResponseEntity<?> generatePromoText(@PathVariable Long productId) {
+        try {
+            String promoText = iVendorService.generatePromoText(productId);
+            return ResponseEntity.ok(Map.of("promoText", promoText));
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
         }
     }
 
